@@ -86,21 +86,20 @@ func (s *StdoutResponse) Start() {
 		uint64(time.Since(detail.StartTime).Nanoseconds()-time.Second.Nanoseconds()))
 	cancel()
 	s.wg.Add(1)
-	go func(wg *sync.WaitGroup, detail *StdoutDetail) {
-		calculateData(detail.Concurrent, detail.ProcessingTime, detail.RequestTime, detail.MaxTime,
-			detail.MinTime, detail.SuccessNum, detail.FailureNum, detail.ChanIdLen, detail.CodeMap)
-		fmt.Println("\n")
-		fmt.Println("*************************  结果 stat  ****************************")
-		fmt.Printf("处理协程数量:%v\n", *s.concurrent)
-		total := detail.SuccessNum + detail.FailureNum
-		fmt.Printf("请求总数:%v 总请求时间:%.4f秒 成功数:%v 失败数:%v 成功率:%.2f\n",
-			total, float64(detail.RequestTime)/1e9,
-			detail.SuccessNum, detail.FailureNum,
-			float64(detail.SuccessNum)*100.0/float64(total))
-		fmt.Println("*************************  结果 end   ****************************")
-		fmt.Println("\n")
-		wg.Done()
-	}(s.wg, detail)
+	go StdOut(s.wg, detail)
+}
+
+func StdOut(wg *sync.WaitGroup, detail *StdoutDetail) {
+	calculateData(detail.Concurrent, detail.ProcessingTime, detail.RequestTime, detail.MaxTime,
+		detail.MinTime, detail.SuccessNum, detail.FailureNum, detail.ChanIdLen, detail.CodeMap)
+	fmt.Println("\n*************************  结果 stat  ****************************")
+	total := detail.SuccessNum + detail.FailureNum
+	fmt.Printf("请求总数:%v 总请求时间:%.4f秒 成功数:%v 失败数:%v 成功率:%.2f\n",
+		total, float64(detail.RequestTime)/1e9,
+		detail.SuccessNum, detail.FailureNum,
+		float64(detail.SuccessNum)*100.0/float64(total))
+	fmt.Println("*************************  结果 end   ****************************")
+	wg.Done()
 }
 
 type StdoutDetail struct {
@@ -135,7 +134,8 @@ func (s *StdoutDetail) tickerCalculateAndPrint(wg *sync.WaitGroup, ctx context.C
 }
 
 // 计算数据
-func calculateData(concurrent, processingTime, requestTime, maxTime, minTime, successNum, failureNum uint64, chanIdLen int, codeMap map[int]int) {
+func calculateData(concurrent, processingTime, requestTime, maxTime, minTime, successNum, failureNum uint64,
+	chanIdLen int, codeMap map[int]int) {
 	if atomic.LoadUint64(&processingTime) == 0 {
 		atomic.StoreUint64(&processingTime, 1)
 	}
@@ -159,10 +159,8 @@ func calculateData(concurrent, processingTime, requestTime, maxTime, minTime, su
 	minTimeFloat = float64(minTime) / 1e6
 	requestTimeFloat = float64(requestTime) / 1e9
 
-	// 打印的时长都为毫秒
-	// result := fmt.Sprintf("请求总数:%8d|successNum:%8d|failureNum:%8d|qps:%9.3f|maxTime:%9.3f|minTime:%9.3f|平均时长:%9.3f|errCode:%v", successNum+failureNum, successNum, failureNum, qps, maxTimeFloat, minTimeFloat, averageTime, errCode)
-	// fmt.Println(result)
-	table(successNum, failureNum, codeMap, qps, averageTime, maxTimeFloat, minTimeFloat, requestTimeFloat, rps, chanIdLen)
+	table(successNum, failureNum, codeMap, qps, averageTime, maxTimeFloat, minTimeFloat, requestTimeFloat,
+		rps, chanIdLen)
 }
 
 // 打印表头信息
@@ -170,10 +168,7 @@ func header() {
 	fmt.Printf("\n\n")
 	// 打印的时长都为毫秒 总请数
 	fmt.Println("─────┬───────┬───────┬───────┬────────┬────────┬────────┬────────┬────────┬────────")
-	result := fmt.Sprintf(" 耗时│ 并发数│ 成功数│ 失败数│   QPS  │最长耗时│最短耗时│平均耗时│ 错误码  │ RPS")
-	fmt.Println(result)
-	// result = fmt.Sprintf("耗时(s)  │总请求数│成功数│失败数│QPS│最长耗时│最短耗时│平均耗时│错误码")
-	// fmt.Println(result)
+	fmt.Println(" 耗时│ 并发数│ 成功数│ 失败数│   QPS  │最长耗时│最短耗时│平均耗时│ 错误码 │ RPS")
 	fmt.Println("─────┼───────┼───────┼───────┼────────┼────────┼────────┼────────┼────────┼────────")
 }
 

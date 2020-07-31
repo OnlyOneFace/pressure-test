@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/valyala/fasthttp"
@@ -18,6 +17,8 @@ type StandardTcp struct {
 	body           []byte
 	End            interface{} //长度和结束符
 }
+
+var tcpDialer = &fasthttp.TCPDialer{Concurrency: 60000}
 
 func (s *StandardTcp) Exec() *Response {
 	var (
@@ -40,11 +41,10 @@ func (s *StandardTcp) Exec() *Response {
 		return response
 	}
 	var (
-		fragment   = FrameGet()
+		fragment   = make([]byte, 1024)
 		readLength int
+		start      = time.Now()
 	)
-	defer FramePut(fragment)
-	start := time.Now()
 	for {
 		if err = conn.SetReadDeadline(time.Now().Add(s.ReadTimeOut)); err != nil {
 			response.ErrInfo = err
@@ -75,20 +75,4 @@ func (s *StandardTcp) Exec() *Response {
 			return response
 		}
 	}
-}
-
-var (
-	tcpDialer = &fasthttp.TCPDialer{Concurrency: 60000}
-
-	framePool = sync.Pool{New: func() interface{} {
-		return make([]byte, 1024)
-	}}
-)
-
-func FrameGet() []byte {
-	return framePool.Get().([]byte)
-}
-
-func FramePut(buf []byte) {
-	framePool.Put(buf)
 }

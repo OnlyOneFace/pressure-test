@@ -1,6 +1,7 @@
 package base
 
 import (
+	"context"
 	"crypto/tls"
 	"io"
 	"io/ioutil"
@@ -37,7 +38,7 @@ var (
 func (s *StandardHttp) Exec() *Response {
 	response := ResponseGet()
 	httpClient.Timeout = s.TimeOut
-	req, err := http.NewRequest(strings.ToUpper(s.Method), s.Url, s.Body)
+	req, err := http.NewRequestWithContext(context.Background(), strings.ToUpper(s.Method), s.Url, s.Body)
 	if err != nil {
 		response.ErrInfo = err
 		return response
