@@ -3,3 +3,4 @@ pressure-test*
 go.sum
 file
 *json
+.idea
