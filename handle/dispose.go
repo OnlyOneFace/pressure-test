@@ -1,7 +1,3 @@
-// Copyright 2020, The Go Authors. All rights reserved.
-// Author: OnlyOneFace
-// Date: 2020/6/28
-
 package handle
 
 import (
