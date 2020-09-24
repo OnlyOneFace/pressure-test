@@ -6,19 +6,21 @@ import (
 	"sync"
 
 	"pressure-test/base"
-	"pressure-test/config"
 	"pressure-test/handle/parse"
 	"pressure-test/statistics"
 )
 
-func StartBenchmark() {
+func Run() {
 	t := parse.GetTransaction()
-	if config.Cfg.DebugMode {
-		for _, doTransaction := range t.DoTransactions {
-			doTransaction.RunMode = &base.RoundMode{Num: 1, Count: 1}
-		}
+	ExecTransaction(t) //模板生成
+}
+
+func Debug() {
+	t := parse.GetTransaction()
+	for _, doTransaction := range t.DoTransactions {
+		doTransaction.RunMode = &base.RoundMode{Num: 1, Count: 1}
 	}
-	ExecTransaction(t) //模板生成)
+	ExecTransaction(t) //模板生成
 }
 
 func ExecTransaction(transaction base.Transaction) {
